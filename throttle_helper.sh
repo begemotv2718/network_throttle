@@ -7,9 +7,8 @@ ip route add default via ${ADDR_PREFIX}1 dev ${VETH_NAME}_cont
 }
 
 cleanup(){
-ip addr del ${ADDR_PREFIX}2/24
+ip addr del ${ADDR_PREFIX}2/24 dev ${VETH_NAME}_cont
 }
-
 
 setup
 $1
