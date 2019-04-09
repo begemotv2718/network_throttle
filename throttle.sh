@@ -10,7 +10,7 @@ ip link add name ${VETH_NAME}_ext type veth peer name ${VETH_NAME}_cont
 ip link set dev ${VETH_NAME}_ext up
 ip addr add ${ADDR_PREFIX}1/24 dev ${VETH_NAME}_ext
 ip link set dev ${VETH_NAME}_cont netns $CONTAINER_NAME
-ip route add ${ADDR_PREFIX}0/24 via ${ADDR_PREFIX}1 dev ${VETH_NAME}_ext
+ip route replace ${ADDR_PREFIX}0/24 via ${ADDR_PREFIX}1 dev ${VETH_NAME}_ext
 iptables -A POSTROUTING -t nat --out-interface ${ETH_NAME} -j MASQUERADE
 iptables -A FORWARD -i ${ETH_NAME} -o ${VETH_NAME}_ext -j ACCEPT
 iptables -A FORWARD -i ${VETH_NAME}_ext -o ${ETH_NAME} -j ACCEPT
