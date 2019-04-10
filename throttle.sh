@@ -3,6 +3,10 @@ ETH_NAME=eth0
 CONTAINER_NAME=my_container
 VETH_NAME=veth
 ADDR_PREFIX="192.168.50."
+TC_TBF_PARAMS="rate 200kbit buffer 1600 limit 3000"
+TC_HTB_PARAMS="rate 200kbit" # ceil 200kbit burst 16kbit cburst 16kbit
+TC_NETEM_PARAMS="delay 50ms" # loss 10% corrupt 5% duplicate 1%
+
 
 setup(){
 ip netns add $CONTAINER_NAME
@@ -17,17 +21,6 @@ iptables -A FORWARD -i ${VETH_NAME}_ext -o ${ETH_NAME} -j ACCEPT
 iptables -A FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT
 }
 
-setup_throttle(){
-tc qdisc add dev ${VETH_NAME}_ext root handle 1:0 tbf rate 200kbit buffer 1600 limit 3000
-tc qdisc add dev ${VETH_NAME}_ext parent 1:0 handle 10:0 netem delay 100ms
-}
-
-cleanup_throttle(){
-# cause an error
-tc qdisc del dev ${VETH_NAME}_ext root netem
-tc qdisc del dev ${VETH_NAME}_ext root tbf rate 512kbit latency 150ms burst 1540
-}
-
 cleanup(){
 iptables -D POSTROUTING -t nat --out-interface ${ETH_NAME} -j MASQUERADE
 iptables -D FORWARD -i ${ETH_NAME} -o ${VETH_NAME}_ext -j ACCEPT
@@ -39,11 +32,12 @@ ip netns del  $CONTAINER_NAME
 }
 
 setup
-setup_throttle
 export CONTAINER_NAME
 export VETH_NAME
 export ADDR_PREFIX
+export TC_TBF_PARAMS
+export TC_HTB_PARAMS
+export TC_NETEM_PARAMS
 ip netns exec $CONTAINER_NAME ./throttle_helper.sh $1
-cleanup_throttle
 cleanup
 
